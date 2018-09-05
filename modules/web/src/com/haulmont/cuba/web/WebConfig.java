@@ -437,18 +437,18 @@ public interface WebConfig extends Config {
     List<String> getLoweredAttentionPatterns();
 
     /**
-     * @return whether web resources should be cached or not
+     * @return web resources cache time
      */
-    @Property("cuba.web.cacheWebResources")
+    @Property("cuba.web.resourcesCacheTime")
     @Source(type = SourceType.APP)
-    @DefaultBoolean(false)
-    boolean getCacheWebResources();
+    @DefaultLong(60 * 60)
+    long getWebResourcesCacheTime();
 
     /**
-     * @return WebJar resources cache time in case of enabled {@link WebConfig#getCacheWebResources()}
+     * @return WebJar resources cache time
      */
-    @Property("cuba.web.webResourcesCacheTime")
+    @Property("cuba.web.webJarResourcesCacheTime")
     @Source(type = SourceType.APP)
     @DefaultLong(60 * 60 * 24 * 365)
-    long getWebResourcesCacheTime();
+    long getWebJarResourcesCacheTime();
 }
