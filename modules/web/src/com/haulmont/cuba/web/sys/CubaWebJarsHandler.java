@@ -92,7 +92,7 @@ public class CubaWebJarsHandler implements RequestHandler {
         response.setContentType(mimeType != null ? mimeType : FileTypesHelper.DEFAULT_MIME_TYPE);
 
         String cacheControl = "public, max-age=0, no-cache, no-store, must-revalidate";
-        int resourceCacheTime = getCacheTime();
+        long resourceCacheTime = getCacheTime();
         if (resourceCacheTime > 0) {
             cacheControl = "max-age=" + String.valueOf(resourceCacheTime);
         }
@@ -184,15 +184,15 @@ public class CubaWebJarsHandler implements RequestHandler {
         return resolver.getResource(classpathPath);
     }
 
-    protected int getCacheTime() {
-        boolean cacheResources = webConfig.getCacheWebJarResources();
+    protected long getCacheTime() {
+        boolean cacheResources = webConfig.getCacheWebResources();
 
         if (!cacheResources && webConfig.getProductionMode()) {
-            log.warn("WebJar resources caching is not enabled in production mode");
+            log.warn("Web resources caching is not enabled in production mode");
         }
 
         return !cacheResources ? 0
-                : webConfig.getWebJarResourcesCacheTime();
+                : webConfig.getWebResourcesCacheTime();
     }
 
     protected String checkResourcePath(String uri) {
