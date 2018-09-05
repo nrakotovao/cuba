@@ -17,7 +17,9 @@
 package com.haulmont.cuba.web.sys;
 
 import com.haulmont.cuba.core.global.AppBeans;
+import com.haulmont.cuba.core.global.Configuration;
 import com.haulmont.cuba.core.global.FileTypesHelper;
+import com.haulmont.cuba.web.WebConfig;
 import com.vaadin.server.RequestHandler;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinResponse;
@@ -44,11 +46,15 @@ public class CubaWebJarsHandler implements RequestHandler {
 
     protected WebJarResourceResolver resolver;
     protected ServletContext servletContext;
+    protected WebConfig webConfig;
 
     public CubaWebJarsHandler(ServletContext servletContext) {
         this.servletContext = servletContext;
 
         this.resolver = AppBeans.get(WebJarResourceResolver.NAME);
+
+        this.webConfig = AppBeans.get(Configuration.class)
+                .getConfig(WebConfig.class);
     }
 
     @Override
@@ -85,13 +91,18 @@ public class CubaWebJarsHandler implements RequestHandler {
         String mimeType = servletContext.getMimeType(resourceName);
         response.setContentType(mimeType != null ? mimeType : FileTypesHelper.DEFAULT_MIME_TYPE);
 
-        String cacheControl = "public, max-age=0, must-revalidate";
-        int resourceCacheTime = getCacheTime(resourceName);
+        String cacheControl = "public, max-age=0, no-cache, no-store, must-revalidate";
+        int resourceCacheTime = getCacheTime();
         if (resourceCacheTime > 0) {
             cacheControl = "max-age=" + String.valueOf(resourceCacheTime);
         }
         response.setHeader("Cache-Control", cacheControl);
-        response.setDateHeader("Expires", System.currentTimeMillis() + (resourceCacheTime * 1000));
+
+        long expires = 0;
+        if (resourceCacheTime > 0) {
+            expires = System.currentTimeMillis() + (resourceCacheTime * 1000);
+        }
+        response.setDateHeader("Expires", expires);
 
         InputStream inputStream = null;
         try {
@@ -173,14 +184,15 @@ public class CubaWebJarsHandler implements RequestHandler {
         return resolver.getResource(classpathPath);
     }
 
-    protected int getCacheTime(String filename) {
-        if (filename.contains(".nocache.")) {
-            return 0;
+    protected int getCacheTime() {
+        boolean cacheResources = webConfig.getCacheWebJarResources();
+
+        if (!cacheResources && webConfig.getProductionMode()) {
+            log.warn("WebJar resources caching is not enabled in production mode");
         }
-        if (filename.contains(".cache.")) {
-            return 60 * 60 * 24 * 365;
-        }
-        return 60 * 60;
+
+        return !cacheResources ? 0
+                : webConfig.getWebJarResourcesCacheTime();
     }
 
     protected String checkResourcePath(String uri) {
